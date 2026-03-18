@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { DATA as MOCK_DATA } from "./data/mockData";
+import { useDashboardData } from "./hooks/useDashboardData";
+
+const DataCtx = createContext(MOCK_DATA);
+const useData = () => useContext(DataCtx);
 import {
   BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell
 } from "recharts";
@@ -9,145 +14,6 @@ import {
   Image, Video, Heart, Bookmark, Share2, MessageCircle, Clock, Calendar,
   Settings, Key, CheckCircle, AlertCircle, Loader2, Shield, Wifi, WifiOff, ExternalLink, Copy, Trash2
 } from "lucide-react";
-
-/* ═══════════════════════════════════════════════════
-   DATA — Campanhas da apresentação Eali (07/03-13/03)
-   Instagram mock alinhado com campos da Graph API
-   ═══════════════════════════════════════════════════ */
-const DATA = {
-  period: { current: "07/03 – 13/03", previous: "28/02 – 06/03" },
-
-  consolidated: {
-    bm1: { invested: 7732.81, reach: 392395, impressions: 1127310, cpm: 6.86, clicks: 16800, campaigns: 13 },
-    bm2: { invested: 2257.49, reach: 77521, impressions: 260256, contacts: 632, newContacts: 481, campaigns: 8 },
-    totalInvested: 9990.30,
-  },
-
-  bm1: {
-    maia: [
-      { name: "Tráfego – Visitas MAIA no seu Lar", result: 1555, resultLabel: "Visitas ao perfil", prevResult: 1463, varResult: 6.29, cost: 0.18, prevCost: 0.19, varCost: -2.97, invested: 285.45 },
-      { name: "Tráfego – ETAPA2 MAIA RMKT Seguidores", result: 2081, resultLabel: "Visitas ao perfil", prevResult: 2493, varResult: -16.53, cost: 0.21, prevCost: 0.20, varCost: 8.40, invested: 0 },
-      { name: "Leads – LP MAIA", result: 180, resultLabel: "Contatos no site", prevResult: 196, varResult: -8.16, cost: 1.14, prevCost: 1.06, varCost: -7.58, invested: 205.07 },
-      { name: "Tráfego – ETAPA1 MAIA Seguidores", result: 5262, resultLabel: "Visitas ao perfil", prevResult: 4627, varResult: 13.72, cost: 0.17, prevCost: 0.18, varCost: -4.36, invested: 886.92 },
-      { name: "Engajamento – MENSAGEM MAIA Todas Lojas", result: 486, resultLabel: "Conversas", prevResult: 402, varResult: 20.90, cost: 4.52, prevCost: 5.31, varCost: -14.92, invested: 2194.37 },
-    ],
-    lider: [
-      { name: "Tráfego – ETAPA1 LÍDER Seguidores", result: 2266, resultLabel: "Visitas ao perfil", prevResult: 1890, varResult: 19.89, cost: 0.37, prevCost: 0.35, varCost: 5.38, invested: 845.63 },
-      { name: "Engajamento – MENSAGEM DIRECT LÍDER", result: 54, resultLabel: "Conversas", prevResult: 43, varResult: 25.58, cost: 5.32, prevCost: 6.13, varCost: -13.30, invested: 0 },
-      { name: "Tráfego – ETAPA2 LÍDER RMKT Seguidores", result: 2341, resultLabel: "Visitas ao perfil", prevResult: 4100, varResult: -42.90, cost: 0.20, prevCost: 0.14, varCost: 49.09, invested: 0 },
-      { name: "Engajamento – MENSAGEM LÍDER Todas Lojas", result: 323, resultLabel: "Conversas", prevResult: 355, varResult: -9.01, cost: 4.76, prevCost: 3.99, varCost: 19.20, invested: 1536.29 },
-    ],
-    shared: [
-      { name: "SEMANA DO CONSUMIDOR – QUARTA MALUCA", result: 407, resultLabel: "ThruPlays", prevResult: 0, varResult: 0, cost: 0.03, prevCost: 0, varCost: 0, invested: 10.44 },
-    ],
-  },
-
-  bm2: {
-    maia: [
-      { name: "Mensagem – MAIA Direct Grupos de Interesses", result: 3, resultLabel: "Conversas", cost: 7.00, invested: 21.00 },
-      { name: "Mensagem – MAIA WhatsApp Grupos de Interesses", result: 13, resultLabel: "Conversas", cost: 3.24, invested: 42.11 },
-      { name: "Mensagem – MAIA Quarta Maluca Semana Consumidor", result: 50, resultLabel: "Conversas", cost: 2.18, invested: 108.88 },
-      { name: "Engajamento – MAIA LP Semana do Consumidor", result: 11, resultLabel: "Contatos no site", cost: 14.33, invested: 157.68 },
-      { name: "Mensagem – MAIA WhatsApp Encarte Quarta Maluca", result: 88, resultLabel: "Conversas", cost: 3.55, invested: 312.31 },
-      { name: "Mensagem – Post Feed", result: 80, resultLabel: "Conversas", cost: 3.18, invested: 254.47 },
-      { name: "Engajamento – MAIA WhatsApp Encarte Março 2026", result: 260, resultLabel: "Conversas", cost: 3.62, invested: 940.21 },
-    ],
-    lider: [
-      { name: "Engajamento – LÍDER WhatsApp Encarte Março 2026", result: 97, resultLabel: "Conversas", cost: 4.34, invested: 420.83 },
-    ],
-  },
-
-  pdvs: {
-    maia: [
-      { name: "Centro", conversions: 189, var: 23.53, cpm: 1.46, prevCpm: 1.83 },
-      { name: "Mangabeira Shopping", conversions: 22, var: 4.76, cpm: 12.85, prevCpm: 12.90 },
-      { name: "Mamanguape", conversions: 67, var: 31.37, cpm: 4.17, prevCpm: 5.32 },
-      { name: "Bayeux", conversions: 56, var: 16.67, cpm: 4.98, prevCpm: 5.62 },
-      { name: "Santa Rita", conversions: 58, var: 16.00, cpm: 4.95, prevCpm: 5.39 },
-      { name: "Loja de Josefa N° 64", conversions: 29, var: 7.41, cpm: 9.90, prevCpm: 9.92 },
-      { name: "Loja de Josefa N° 401", conversions: 21, var: 5.00, cpm: 13.29, prevCpm: 13.81 },
-      { name: "Cabedelo", conversions: 44, var: 37.50, cpm: 5.11, prevCpm: 7.12 },
-    ],
-    lider: [
-      { name: "Tambaú", conversions: 102, var: -21.54, cpm: 2.71, prevCpm: 2.15 },
-      { name: "Plumas Colchões Mangabeira", conversions: 37, var: 428.57, cpm: 6.21, prevCpm: 19.64 },
-      { name: "Centro", conversions: 64, var: -36.63, cpm: 4.32, prevCpm: 2.80 },
-      { name: "Cabedelo", conversions: 27, var: -3.57, cpm: 7.36, prevCpm: 5.65 },
-      { name: "Select Manaíra (JP)", conversions: 63, var: -7.35, cpm: 4.50, prevCpm: 4.05 },
-      { name: "Mangabeira 1", conversions: 30, var: 42.86, cpm: 9.11, prevCpm: 13.53 },
-    ],
-  },
-
-  topCreatives: {
-    maia: [
-      { name: "MAIA Centro – Liquidação", msgs: 186, cost: 1.47, source: "BM1 Vendas" },
-      { name: "Cozinha Monique", msgs: 58, cost: 3.67, source: "BM2 Encarte" },
-      { name: "Roupeiro Beija Flor", msgs: 44, cost: 3.48, source: "BM2 Encarte" },
-      { name: "Roupeiro Melissa", msgs: 43, cost: 4.11, source: "BM2 Encarte" },
-    ],
-    lider: [
-      { name: "Líder Tambaú – Colchão", msgs: 96, cost: 2.72, source: "BM1 Vendas" },
-      { name: "Líder Manaíra – Colchão Galaxy", msgs: 52, cost: 4.63, source: "BM1 Vendas" },
-    ],
-  },
-
-  /* Instagram — campos que a Graph API retorna:
-     Profile: followers_count, follows_count, media_count, username, name
-     Media: id, caption, media_type, timestamp, like_count, comments_count
-     Media Insights: reach, impressions, saved, shares (por post)
-     Stories: id, media_type, timestamp + insights (reach, impressions, replies, exits)
-     Account Insights: follower_count, reach, impressions (por dia) */
-  instagram: {
-    maia: {
-      profile: { followers_count: 28430, follows_count: 1250, media_count: 1842, username: "lojasmaiaof", name: "Lojas Maia" },
-      recentPosts: [
-        { media_type: "CAROUSEL_ALBUM", timestamp: "2026-03-13T09:15:00", caption: "Semana do Consumidor — até 50% OFF em móveis selecionados", like_count: 342, comments_count: 28, insights: { reach: 4820, impressions: 6100, saved: 67, shares: 15 } },
-        { media_type: "VIDEO", timestamp: "2026-03-13T14:30:00", caption: "Tour pela loja Centro — novidades de março", like_count: 891, comments_count: 64, insights: { reach: 12400, impressions: 18200, saved: 123, shares: 42 } },
-        { media_type: "IMAGE", timestamp: "2026-03-12T10:00:00", caption: "Roupeiro Melissa com espelho — parcele em 12x sem juros", like_count: 198, comments_count: 12, insights: { reach: 3200, impressions: 4100, saved: 34, shares: 8 } },
-        { media_type: "VIDEO", timestamp: "2026-03-11T16:00:00", caption: "Montagem completa da Cozinha Monique — veja o resultado!", like_count: 1240, comments_count: 87, insights: { reach: 15600, impressions: 22400, saved: 198, shares: 67 } },
-        { media_type: "CAROUSEL_ALBUM", timestamp: "2026-03-10T09:30:00", caption: "5 dicas para escolher o sofá perfeito para sua sala", like_count: 456, comments_count: 31, insights: { reach: 5800, impressions: 7200, saved: 89, shares: 23 } },
-        { media_type: "IMAGE", timestamp: "2026-03-09T11:00:00", caption: "Mesa de jantar 6 lugares — promoção válida até sábado", like_count: 167, comments_count: 9, insights: { reach: 2900, impressions: 3800, saved: 22, shares: 5 } },
-      ],
-      stories: [
-        { media_type: "IMAGE", timestamp: "2026-03-13T08:00:00", insights: { reach: 1240, impressions: 1580, replies: 8, exits: 120 } },
-        { media_type: "VIDEO", timestamp: "2026-03-13T10:20:00", insights: { reach: 980, impressions: 1340, replies: 12, exits: 98 } },
-        { media_type: "IMAGE", timestamp: "2026-03-13T12:00:00", insights: { reach: 1180, impressions: 1490, replies: 245, exits: 85 } },
-        { media_type: "IMAGE", timestamp: "2026-03-13T15:45:00", insights: { reach: 890, impressions: 1120, replies: 6, exits: 145 } },
-        { media_type: "VIDEO", timestamp: "2026-03-13T18:30:00", insights: { reach: 760, impressions: 980, replies: 4, exits: 92 } },
-      ],
-      accountInsights: {
-        follower_count: [{ end_time: "2026-03-07", value: 27980 }, { end_time: "2026-03-08", value: 28040 }, { end_time: "2026-03-09", value: 28120 }, { end_time: "2026-03-10", value: 28190 }, { end_time: "2026-03-11", value: 28270 }, { end_time: "2026-03-12", value: 28350 }, { end_time: "2026-03-13", value: 28430 }],
-        reach: [{ end_time: "2026-03-07", value: 4200 }, { end_time: "2026-03-08", value: 5100 }, { end_time: "2026-03-09", value: 3800 }, { end_time: "2026-03-10", value: 6200 }, { end_time: "2026-03-11", value: 8400 }, { end_time: "2026-03-12", value: 4600 }, { end_time: "2026-03-13", value: 7800 }],
-        impressions: [{ end_time: "2026-03-07", value: 5800 }, { end_time: "2026-03-08", value: 7200 }, { end_time: "2026-03-09", value: 5100 }, { end_time: "2026-03-10", value: 8900 }, { end_time: "2026-03-11", value: 12400 }, { end_time: "2026-03-12", value: 6300 }, { end_time: "2026-03-13", value: 11200 }],
-      },
-    },
-    lider: {
-      profile: { followers_count: 19870, follows_count: 890, media_count: 1456, username: "lidercolchoes", name: "Líder Colchões" },
-      recentPosts: [
-        { media_type: "IMAGE", timestamp: "2026-03-13T10:00:00", caption: "Colchão Galaxy — tecnologia de molas ensacadas para seu sono perfeito", like_count: 256, comments_count: 19, insights: { reach: 3640, impressions: 4800, saved: 45, shares: 8 } },
-        { media_type: "VIDEO", timestamp: "2026-03-12T14:00:00", caption: "Teste de conforto: Galaxy vs espuma convencional", like_count: 678, comments_count: 42, insights: { reach: 9800, impressions: 14200, saved: 112, shares: 34 } },
-        { media_type: "CAROUSEL_ALBUM", timestamp: "2026-03-11T09:00:00", caption: "Guia completo: como escolher o colchão ideal para você", like_count: 389, comments_count: 27, insights: { reach: 5400, impressions: 7100, saved: 156, shares: 41 } },
-        { media_type: "IMAGE", timestamp: "2026-03-10T11:30:00", caption: "Promoção Select Manaíra — colchões com até 40% OFF", like_count: 145, comments_count: 8, insights: { reach: 2800, impressions: 3600, saved: 18, shares: 4 } },
-        { media_type: "VIDEO", timestamp: "2026-03-09T16:00:00", caption: "Bastidores da fábrica — como seu colchão é produzido", like_count: 920, comments_count: 56, insights: { reach: 11200, impressions: 16800, saved: 87, shares: 52 } },
-      ],
-      stories: [
-        { media_type: "IMAGE", timestamp: "2026-03-13T08:30:00", insights: { reach: 820, impressions: 1040, replies: 5, exits: 88 } },
-        { media_type: "VIDEO", timestamp: "2026-03-13T11:00:00", insights: { reach: 1050, impressions: 1380, replies: 18, exits: 72 } },
-        { media_type: "IMAGE", timestamp: "2026-03-13T16:00:00", insights: { reach: 940, impressions: 1200, replies: 312, exits: 65 } },
-      ],
-      accountInsights: {
-        follower_count: [{ end_time: "2026-03-07", value: 19580 }, { end_time: "2026-03-08", value: 19620 }, { end_time: "2026-03-09", value: 19670 }, { end_time: "2026-03-10", value: 19720 }, { end_time: "2026-03-11", value: 19770 }, { end_time: "2026-03-12", value: 19820 }, { end_time: "2026-03-13", value: 19870 }],
-        reach: [{ end_time: "2026-03-07", value: 3100 }, { end_time: "2026-03-08", value: 3600 }, { end_time: "2026-03-09", value: 4800 }, { end_time: "2026-03-10", value: 3200 }, { end_time: "2026-03-11", value: 5900 }, { end_time: "2026-03-12", value: 4100 }, { end_time: "2026-03-13", value: 3800 }],
-        impressions: [{ end_time: "2026-03-07", value: 4200 }, { end_time: "2026-03-08", value: 4900 }, { end_time: "2026-03-09", value: 6700 }, { end_time: "2026-03-10", value: 4400 }, { end_time: "2026-03-11", value: 8200 }, { end_time: "2026-03-12", value: 5600 }, { end_time: "2026-03-13", value: 5200 }],
-      },
-    },
-  },
-
-  brands: {
-    maia: { name: "Lojas Maia", handle: "@lojasmaiaof", accent: "#f59e0b", accentLight: "#fbbf24" },
-    lider: { name: "Líder Colchões", handle: "@lidercolchoes", accent: "#6366f1", accentLight: "#818cf8" },
-  },
-};
 
 /* ═══ INSTAGRAM GRAPH API ═══ */
 async function fetchInstagramData(token, igId) {
@@ -324,14 +190,14 @@ function KPI({ icon: Icon, label, value, sub, accent, dark: dk }) {
         <span className={`text-[10px] font-medium tracking-wider uppercase ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{label}</span>
         <div className="p-1.5 rounded-lg" style={{ background: (accent || "#888") + "14" }}><Icon size={13} style={{ color: accent }} /></div>
       </div>
-      <div className={`text-xl font-semibold tracking-tight ${dk ? "text-zinc-50" : "text-zinc-900"}`}>{value}</div>
+      <div className={`text-lg sm:text-xl font-semibold tracking-tight ${dk ? "text-zinc-50" : "text-zinc-900"}`}>{value}</div>
       {sub && <div className={`text-[11px] mt-1 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{sub}</div>}
     </div>
   );
 }
 function Card({ title, badge, children, dark: dk }) {
   return (
-    <div className={`rounded-2xl p-5 ${dk ? "bg-zinc-800/50 border-zinc-700/40" : "bg-white border-zinc-200/60"} border`}>
+    <div className={`rounded-2xl p-4 sm:p-5 ${dk ? "bg-zinc-800/50 border-zinc-700/40" : "bg-white border-zinc-200/60"} border`}>
       {(title || badge) && <div className="flex items-center justify-between mb-4">{title && <h3 className={`text-sm font-medium ${dk ? "text-zinc-300" : "text-zinc-700"}`}>{title}</h3>}{badge && <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full ${dk ? "bg-zinc-700/60 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}>{badge}</span>}</div>}
       {children}
     </div>
@@ -343,7 +209,8 @@ function VarBadge({ value, inverted, dark: dk }) {
   return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ${varBg(value, inverted, dk)}`}>{p ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}{value >= 0 ? "+" : ""}{value.toFixed(2)}%</span>;
 }
 function BM1Table({ campaigns, dark: dk, title, period }) {
-  return (<Card title={title} badge={period || `${DATA.period.current} vs ${DATA.period.previous}`} dark={dk}><div className="overflow-x-auto -mx-2"><table className="w-full text-xs min-w-[700px]"><thead><tr className={`${dk ? "text-zinc-500 border-zinc-700/50" : "text-zinc-400 border-zinc-200"} border-b`}><th className="py-2.5 px-3 text-left font-medium">Campanha</th><th className="py-2.5 px-2 text-right font-medium">Resultado</th><th className="py-2.5 px-2 text-right font-medium">Anterior</th><th className="py-2.5 px-2 text-center font-medium">Var.</th><th className="py-2.5 px-2 text-right font-medium">Custo</th><th className="py-2.5 px-2 text-right font-medium">Ant.</th><th className="py-2.5 px-2 text-center font-medium">Var.</th></tr></thead><tbody>{campaigns.map((c, i) => (<tr key={i} className={`${dk ? "border-zinc-800 hover:bg-zinc-700/20" : "border-zinc-100 hover:bg-zinc-50"} border-b transition-colors`}><td className="py-3 px-3"><div className={`font-medium ${dk ? "text-zinc-200" : "text-zinc-800"}`}>{c.name}</div><div className={`text-[10px] mt-0.5 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{c.resultLabel}</div></td><td className={`py-3 px-2 text-right font-semibold ${dk ? "text-zinc-100" : "text-zinc-900"}`}>{c.result.toLocaleString("pt-BR")}</td><td className={`py-3 px-2 text-right ${dk ? "text-zinc-400" : "text-zinc-500"}`}>{c.prevResult ? c.prevResult.toLocaleString("pt-BR") : "—"}</td><td className="py-3 px-2 text-center"><VarBadge value={c.varResult} dark={dk} /></td><td className={`py-3 px-2 text-right font-medium ${dk ? "text-zinc-200" : "text-zinc-800"}`}>{fmtMoney(c.cost)}</td><td className={`py-3 px-2 text-right ${dk ? "text-zinc-400" : "text-zinc-500"}`}>{c.prevCost ? fmtMoney(c.prevCost) : "—"}</td><td className="py-3 px-2 text-center"><VarBadge value={c.varCost} inverted dark={dk} /></td></tr>))}</tbody></table></div></Card>);
+  const DATA = useData();
+  return (<Card title={title} badge={period || `${DATA.period.current} vs ${DATA.period.previous}`} dark={dk}><div className="overflow-x-auto -mx-2"><table className="w-full text-xs min-w-[700px]"><thead><tr className={`${dk ? "text-zinc-500 border-zinc-700/50" : "text-zinc-400 border-zinc-200"} border-b`}><th className="py-2.5 px-3 text-left font-medium">Campanha</th><th className="py-2.5 px-2 text-right font-medium">Resultado</th><th className="py-2.5 px-2 text-right font-medium">Anterior</th><th className="py-2.5 px-2 text-center font-medium">Var.</th><th className="py-2.5 px-2 text-right font-medium">Custo</th><th className="py-2.5 px-2 text-right font-medium">Ant.</th><th className="py-2.5 px-2 text-center font-medium">Var.</th></tr></thead><tbody>{campaigns.map((c, i) => (<tr key={i} className={`${dk ? "border-zinc-800 hover:bg-zinc-700/20" : "border-zinc-100 hover:bg-zinc-50"} border-b transition-colors`}><td className="py-3 px-3"><div className={`font-medium ${dk ? "text-zinc-200" : "text-zinc-800"}`}>{c.name}</div><div className={`text-[10px] mt-0.5 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{c.resultLabel}</div></td><td className={`py-3 px-2 text-right font-semibold ${dk ? "text-zinc-100" : "text-zinc-900"}`}>{c.result.toLocaleString("pt-BR")}</td><td className={`py-3 px-2 text-right ${dk ? "text-zinc-400" : "text-zinc-500"}`}>{c.prevResult ? c.prevResult.toLocaleString("pt-BR") : "—"}</td><td className="py-3 px-2 text-center"><VarBadge value={c.varResult} dark={dk} /></td><td className={`py-3 px-2 text-right font-medium ${dk ? "text-zinc-200" : "text-zinc-800"}`}>{fmtMoney(c.cost)}</td><td className={`py-3 px-2 text-right ${dk ? "text-zinc-400" : "text-zinc-500"}`}>{c.prevCost ? fmtMoney(c.prevCost) : "—"}</td><td className="py-3 px-2 text-center"><VarBadge value={c.varCost} inverted dark={dk} /></td></tr>))}</tbody><tfoot><tr className={`${dk ? "border-zinc-700/50 text-zinc-200" : "border-zinc-200 text-zinc-700"} border-t font-semibold`}><td className="py-3 px-3">Total</td><td className="py-3 px-2 text-right">{campaigns.reduce((s, c) => s + (c.result || 0), 0).toLocaleString("pt-BR")}</td><td className="py-3 px-2 text-right">—</td><td className="py-3 px-2" /><td className="py-3 px-2 text-right">{fmtMoney(campaigns.reduce((s, c) => s + (c.invested || 0), 0))}</td><td className="py-3 px-2" /><td className="py-3 px-2" /></tr></tfoot></table></div></Card>);
 }
 function BM2Table({ campaigns, dark: dk, title }) {
   return (<Card title={title} badge={`${campaigns.length} campanhas`} dark={dk}><div className={`text-[11px] mb-4 px-3 py-2 rounded-lg inline-flex items-center gap-2 ${dk ? "bg-amber-500/8 text-amber-300/80" : "bg-amber-50 text-amber-700"}`}><ShoppingBag size={12} /> Conversões → GoHighLevel (CRM)</div><div className="overflow-x-auto -mx-2"><table className="w-full text-xs min-w-[500px]"><thead><tr className={`${dk ? "text-zinc-500 border-zinc-700/50" : "text-zinc-400 border-zinc-200"} border-b`}><th className="py-2.5 px-3 text-left font-medium">Campanha</th><th className="py-2.5 px-2 text-right font-medium">Resultado</th><th className="py-2.5 px-2 text-right font-medium">CPL</th><th className="py-2.5 px-2 text-right font-medium">Investido</th></tr></thead><tbody>{campaigns.map((c, i) => (<tr key={i} className={`${dk ? "border-zinc-800 hover:bg-zinc-700/20" : "border-zinc-100 hover:bg-zinc-50"} border-b transition-colors`}><td className="py-3 px-3"><div className={`font-medium ${dk ? "text-zinc-200" : "text-zinc-800"}`}>{c.name}</div><div className={`text-[10px] mt-0.5 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{c.resultLabel}</div></td><td className={`py-3 px-2 text-right font-semibold ${dk ? "text-zinc-100" : "text-zinc-900"}`}>{c.result}</td><td className={`py-3 px-2 text-right font-medium ${dk ? "text-zinc-200" : "text-zinc-800"}`}>{fmtMoney(c.cost)}</td><td className={`py-3 px-2 text-right ${dk ? "text-zinc-300" : "text-zinc-600"}`}>{fmtMoney(c.invested)}</td></tr>))}</tbody><tfoot><tr className={`${dk ? "border-zinc-700/50 text-zinc-200" : "border-zinc-200 text-zinc-700"} border-t font-semibold`}><td className="py-3 px-3">Total</td><td className="py-3 px-2 text-right">{campaigns.reduce((s, c) => s + c.result, 0)}</td><td className="py-3 px-2 text-right">—</td><td className="py-3 px-2 text-right">{fmtMoney(campaigns.reduce((s, c) => s + c.invested, 0))}</td></tr></tfoot></table></div></Card>);
@@ -359,12 +226,13 @@ function CreativesList({ creatives, accent, accentLight, dark: dk }) {
 
 /* ═══ TAB 1: CONSOLIDADO ═══ */
 function ConsolidatedView({ dark: dk, liveData, loading, error }) {
+  const DATA = useData();
   const c = liveData?.consolidated || DATA.consolidated;
-  return (<div className="space-y-5">
+  return (<div className="space-y-4 sm:space-y-5">
     {loading && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-zinc-800/50 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}><Loader2 size={13} className="animate-spin text-emerald-500" /> Buscando dados reais da Meta API...</div>}
     {error && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600"}`}><AlertCircle size={13} /> {error}</div>}
-    <div className={`rounded-2xl p-5 text-center ${dk ? "bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-emerald-500/20" : "bg-gradient-to-r from-emerald-50 to-cyan-50 border-emerald-200"} border`}><div className={`text-[10px] uppercase tracking-wider mb-1 ${dk ? "text-zinc-400" : "text-zinc-500"}`}>Total geral investido {liveData ? "(últimos 7 dias)" : "na semana"}</div><div className={`text-3xl font-bold tracking-tight ${dk ? "text-emerald-400" : "text-emerald-700"}`}>{fmtMoney(c.totalInvested)}</div><div className={`text-xs mt-1 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{liveData ? "API conectada" : DATA.period.current} · BM1 + BM2</div></div>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><KPI dark={dk} icon={DollarSign} label="BM1 Investido" value={fmtMoney(c.bm1.invested)} sub="Topo de funil" accent="#10b981" /><KPI dark={dk} icon={DollarSign} label="BM2 Investido" value={fmtMoney(c.bm2.invested)} sub="Conversão CRM" accent="#f59e0b" /><KPI dark={dk} icon={Eye} label="Alcance total" value={fmt(c.bm1.reach + c.bm2.reach)} sub="BM1 + BM2" accent="#06b6d4" /><KPI dark={dk} icon={Target} label="Novos contatos" value={String(c.bm2.newContacts)} sub="Via GoHighLevel" accent="#8b5cf6" /></div>
+    <div className={`rounded-2xl p-4 sm:p-5 text-center ${dk ? "bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-emerald-500/20" : "bg-gradient-to-r from-emerald-50 to-cyan-50 border-emerald-200"} border`}><div className={`text-[10px] uppercase tracking-wider mb-1 ${dk ? "text-zinc-400" : "text-zinc-500"}`}>Total geral investido {liveData ? "(últimos 7 dias)" : "na semana"}</div><div className={`text-2xl sm:text-3xl font-bold tracking-tight ${dk ? "text-emerald-400" : "text-emerald-700"}`}>{fmtMoney(c.totalInvested)}</div><div className={`text-xs mt-1 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{liveData ? "API conectada" : DATA.period.current} · BM1 + BM2</div></div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"><KPI dark={dk} icon={DollarSign} label="BM1 Investido" value={fmtMoney(c.bm1.invested)} sub="Topo de funil" accent="#10b981" /><KPI dark={dk} icon={DollarSign} label="BM2 Investido" value={fmtMoney(c.bm2.invested)} sub="Conversão CRM" accent="#f59e0b" /><KPI dark={dk} icon={Eye} label="Alcance total" value={fmt(c.bm1.reach + c.bm2.reach)} sub="BM1 + BM2" accent="#06b6d4" /><KPI dark={dk} icon={Target} label="Novos contatos" value={String(c.bm2.newContacts)} sub="Via GoHighLevel" accent="#8b5cf6" /></div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card title="BM1 — Topo + Meio de funil" badge={`${c.bm1.campaigns} campanhas`} dark={dk}><div className="grid grid-cols-2 gap-3">{[{ l: "Alcance", v: fmt(c.bm1.reach) }, { l: "Impressões", v: fmt(c.bm1.impressions) }, { l: "CPM médio", v: fmtMoney(c.bm1.cpm) }, { l: "Cliques", v: fmt(c.bm1.clicks) }].map(m => (<div key={m.l} className={`rounded-xl p-3 ${dk ? "bg-zinc-900/50" : "bg-zinc-50"}`}><div className={`text-[10px] uppercase tracking-wider ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{m.l}</div><div className={`text-base font-semibold mt-1 ${dk ? "text-zinc-100" : "text-zinc-900"}`}>{m.v}</div></div>))}</div></Card>
       <Card title="BM2 — Fundo de funil (CRM)" badge={`${c.bm2.campaigns} campanhas`} dark={dk}><div className="grid grid-cols-2 gap-3">{[{ l: "Alcance", v: fmt(c.bm2.reach) }, { l: "Impressões", v: fmt(c.bm2.impressions) }, { l: "Total contatos", v: String(c.bm2.contacts) }, { l: "Novos contatos", v: String(c.bm2.newContacts) }].map(m => (<div key={m.l} className={`rounded-xl p-3 ${dk ? "bg-zinc-900/50" : "bg-zinc-50"}`}><div className={`text-[10px] uppercase tracking-wider ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{m.l}</div><div className={`text-base font-semibold mt-1 ${dk ? "text-zinc-100" : "text-zinc-900"}`}>{m.v}</div></div>))}</div></Card>
@@ -373,60 +241,50 @@ function ConsolidatedView({ dark: dk, liveData, loading, error }) {
   </div>);
 }
 
-/* ═══ TAB 2/3: BRAND VIEW ═══ */
-function BrandView({ brandKey, dark: dk, liveData }) {
-  const brand = DATA.brands[brandKey];
-  const [sub, setSub] = useState("bm1");
-  const isLive = !!liveData;
-  const bm1Campaigns = isLive ? (liveData.bm1Campaigns || []) : DATA.bm1[brandKey];
-  const bm2Campaigns = isLive ? (liveData.bm2Campaigns || []) : DATA.bm2[brandKey];
-  const period = isLive ? "Últimos 7 dias" : undefined;
-  return (<div className="space-y-5">
-    <div className="flex items-center gap-3"><div className="w-11 h-11 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg" style={{ background: `linear-gradient(135deg, ${brand.accent}, ${brand.accentLight})` }}>{brand.name.charAt(0)}</div><div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>{brand.name}</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{brand.handle} · BM1 + BM2 · {isLive ? "Últimos 7 dias" : DATA.period.current}</span></div></div>
-    <div className={`inline-flex rounded-xl p-1 flex-wrap gap-1 ${dk ? "bg-zinc-900/80" : "bg-zinc-100"}`}>{[{ id: "bm1", label: "BM1 Topo", icon: Megaphone }, { id: "bm2", label: "BM2 CRM", icon: ShoppingBag }, { id: "pdvs", label: "PDVs", icon: Store }, { id: "criativos", label: "Criativos", icon: Award }].map(t => (<button key={t.id} onClick={() => setSub(t.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${sub === t.id ? (dk ? "bg-zinc-800 text-zinc-100 shadow-sm" : "bg-white text-zinc-900 shadow-sm") : (dk ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-500 hover:text-zinc-700")}`}><t.icon size={12} />{t.label}</button>))}</div>
-    {sub === "bm1" && <BM1Table campaigns={bm1Campaigns} dark={dk} title={`BM1 — ${brand.name}`} period={period} />}
-    {sub === "bm2" && <BM2Table campaigns={bm2Campaigns} dark={dk} title={`BM2 — ${brand.name}`} />}
-    {sub === "pdvs" && <Card title={`PDVs — ${brand.name}`} badge={`${DATA.period.current} vs anterior`} dark={dk}><PDVGrid pdvs={DATA.pdvs[brandKey]} accent={brand.accent} dark={dk} /></Card>}
-    {sub === "criativos" && <Card title={`Criativos — ${brand.name}`} dark={dk}><CreativesList creatives={DATA.topCreatives[brandKey]} accent={brand.accent} accentLight={brand.accentLight} dark={dk} /></Card>}
-  </div>);
-}
-
-/* ═══ TAB 4: BM1 ═══ */
+/* ═══ TAB 2: BM1 ═══ */
 function BM1View({ dark: dk, liveData, loading, error }) {
+  const DATA = useData();
+  const [sub, setSub] = useState("maia");
   const isLive = !!liveData;
   const bm1 = isLive ? liveData.bm1Summary : DATA.consolidated.bm1;
   const maiaCampaigns = isLive ? (liveData.bm1MaiaCampaigns || []) : DATA.bm1.maia;
   const liderCampaigns = isLive ? (liveData.bm1LiderCampaigns || []) : DATA.bm1.lider;
+  const sharedCampaigns = isLive ? (liveData.bm1Campaigns?.filter(c => !/maia|l[ií]der/i.test(c.name)) || []) : DATA.bm1.shared;
   const period = isLive ? "Últimos 7 dias" : undefined;
-  return (<div className="space-y-5">
+  return (<div className="space-y-4 sm:space-y-5">
     <div className="flex items-center gap-3"><div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}><Megaphone size={18} /></div><div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>BM1 — Topo de funil</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>Tráfego · Seguidores · Direct · Engajamento · {isLive ? "Dados reais" : "Demo"}</span></div></div>
     {loading && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-zinc-800/50 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}><Loader2 size={13} className="animate-spin text-emerald-500" /> Buscando dados reais da Meta API...</div>}
     {error && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600"}`}><AlertCircle size={13} /> {error}</div>}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><KPI dark={dk} icon={DollarSign} label="Investido" value={fmtMoney(bm1?.invested ?? DATA.consolidated.bm1.invested)} accent="#10b981" /><KPI dark={dk} icon={Eye} label="Alcance" value={fmt(bm1?.reach ?? DATA.consolidated.bm1.reach)} accent="#06b6d4" /><KPI dark={dk} icon={Zap} label="Impressões" value={fmt(bm1?.impressions ?? DATA.consolidated.bm1.impressions)} accent="#8b5cf6" /><KPI dark={dk} icon={DollarSign} label="CPM médio" value={fmtMoney(bm1?.cpm ?? DATA.consolidated.bm1.cpm)} accent="#f59e0b" /></div>
-    {maiaCampaigns.length > 0 && <BM1Table campaigns={maiaCampaigns} dark={dk} title="Lojas Maia — BM1" period={period} />}
-    {liderCampaigns.length > 0 && <BM1Table campaigns={liderCampaigns} dark={dk} title="Líder Colchões — BM1" period={period} />}
-    {!isLive && DATA.bm1.shared.length > 0 && <BM1Table campaigns={DATA.bm1.shared} dark={dk} title="Compartilhadas — BM1" />}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"><KPI dark={dk} icon={DollarSign} label="Investido" value={fmtMoney(bm1?.invested ?? DATA.consolidated.bm1.invested)} accent="#10b981" /><KPI dark={dk} icon={Eye} label="Alcance" value={fmt(bm1?.reach ?? DATA.consolidated.bm1.reach)} accent="#06b6d4" /><KPI dark={dk} icon={Zap} label="Impressões" value={fmt(bm1?.impressions ?? DATA.consolidated.bm1.impressions)} accent="#8b5cf6" /><KPI dark={dk} icon={DollarSign} label="CPM médio" value={fmtMoney(bm1?.cpm ?? DATA.consolidated.bm1.cpm)} accent="#f59e0b" /></div>
+    <div className={`inline-flex rounded-xl p-1 flex-wrap gap-1 ${dk ? "bg-zinc-900/80" : "bg-zinc-100"}`}>{[{ id: "maia", label: "Maia", color: "#f59e0b" }, { id: "lider", label: "Líder", color: "#6366f1" }, { id: "shared", label: "Compartilhadas", color: "#10b981" }].map(t => (<button key={t.id} onClick={() => setSub(t.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${sub === t.id ? (dk ? "bg-zinc-800 text-zinc-100 shadow-sm" : "bg-white text-zinc-900 shadow-sm") : (dk ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-500 hover:text-zinc-700")}`}><div className="w-2.5 h-2.5 rounded-sm" style={{ background: t.color }} />{t.label}</button>))}</div>
+    {sub === "maia" && <BM1Table campaigns={maiaCampaigns} dark={dk} title="Lojas Maia — BM1" period={period} />}
+    {sub === "lider" && <BM1Table campaigns={liderCampaigns} dark={dk} title="Líder Colchões — BM1" period={period} />}
+    {sub === "shared" && <BM1Table campaigns={sharedCampaigns} dark={dk} title="Campanhas Compartilhadas — BM1" period={period} />}
   </div>);
 }
 
-/* ═══ TAB 5: BM2 ═══ */
+/* ═══ TAB 3: BM2 ═══ */
 function BM2View({ dark: dk, liveData, loading, error }) {
+  const DATA = useData();
+  const [sub, setSub] = useState("maia");
   const isLive = !!liveData;
   const bm2 = isLive ? liveData.bm2Summary : DATA.consolidated.bm2;
   const maiaCampaigns = isLive ? (liveData.bm2MaiaCampaigns || []) : DATA.bm2.maia;
   const liderCampaigns = isLive ? (liveData.bm2LiderCampaigns || []) : DATA.bm2.lider;
-  return (<div className="space-y-5">
+  return (<div className="space-y-4 sm:space-y-5">
     <div className="flex items-center gap-3"><div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)" }}><ShoppingBag size={18} /></div><div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>BM2 — Conversão CRM</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>WhatsApp · Encarte · LP · GoHighLevel · {isLive ? "Dados reais" : "Demo"}</span></div></div>
     {loading && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-zinc-800/50 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}><Loader2 size={13} className="animate-spin text-emerald-500" /> Buscando dados reais da Meta API...</div>}
     {error && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600"}`}><AlertCircle size={13} /> {error}</div>}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><KPI dark={dk} icon={DollarSign} label="Investido" value={fmtMoney(bm2?.invested ?? DATA.consolidated.bm2.invested)} accent="#f59e0b" /><KPI dark={dk} icon={Eye} label="Alcance" value={fmt(bm2?.reach ?? DATA.consolidated.bm2.reach)} accent="#06b6d4" /><KPI dark={dk} icon={Target} label="Total contatos" value={String(bm2?.contacts ?? DATA.consolidated.bm2.contacts)} accent="#8b5cf6" /><KPI dark={dk} icon={Users} label="Novos contatos" value={String(bm2?.newContacts ?? DATA.consolidated.bm2.newContacts)} accent="#10b981" /></div>
-    {maiaCampaigns.length > 0 && <BM2Table campaigns={maiaCampaigns} dark={dk} title="Lojas Maia — BM2" />}
-    {liderCampaigns.length > 0 && <BM2Table campaigns={liderCampaigns} dark={dk} title="Líder Colchões — BM2" />}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"><KPI dark={dk} icon={DollarSign} label="Investido" value={fmtMoney(bm2?.invested ?? DATA.consolidated.bm2.invested)} accent="#f59e0b" /><KPI dark={dk} icon={Eye} label="Alcance" value={fmt(bm2?.reach ?? DATA.consolidated.bm2.reach)} accent="#06b6d4" /><KPI dark={dk} icon={Target} label="Total contatos" value={String(bm2?.contacts ?? DATA.consolidated.bm2.contacts)} accent="#8b5cf6" /><KPI dark={dk} icon={Users} label="Novos contatos" value={String(bm2?.newContacts ?? DATA.consolidated.bm2.newContacts)} accent="#10b981" /></div>
+    <div className={`inline-flex rounded-xl p-1 flex-wrap gap-1 ${dk ? "bg-zinc-900/80" : "bg-zinc-100"}`}>{[{ id: "maia", label: "Maia", color: "#f59e0b" }, { id: "lider", label: "Líder", color: "#6366f1" }].map(t => (<button key={t.id} onClick={() => setSub(t.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${sub === t.id ? (dk ? "bg-zinc-800 text-zinc-100 shadow-sm" : "bg-white text-zinc-900 shadow-sm") : (dk ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-500 hover:text-zinc-700")}`}><div className="w-2.5 h-2.5 rounded-sm" style={{ background: t.color }} />{t.label}</button>))}</div>
+    {sub === "maia" && <BM2Table campaigns={maiaCampaigns} dark={dk} title="Lojas Maia — BM2" />}
+    {sub === "lider" && <BM2Table campaigns={liderCampaigns} dark={dk} title="Líder Colchões — BM2" />}
   </div>);
 }
 
 /* ═══ TAB 6: INSTAGRAM ═══ */
 function InstagramView({ dark: dk, apiConfig }) {
+  const DATA = useData();
   const [account, setAccount] = useState("maia");
   const [liveData, setLiveData] = useState({ maia: null, lider: null });
   const [loading, setLoading] = useState(false);
@@ -477,7 +335,7 @@ function InstagramView({ dark: dk, apiConfig }) {
   const reachChart = (ig?.accountInsights?.reach ?? []).map(d => ({ date: new Date(d.end_time).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), value: d.value }));
   const impressionsChart = (ig?.accountInsights?.impressions ?? []).map(d => ({ date: new Date(d.end_time).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), value: d.value }));
 
-  return (<div className="space-y-5">
+  return (<div className="space-y-4 sm:space-y-5">
     <div className="flex items-center justify-between flex-wrap gap-3">
       <div className="flex items-center gap-3"><div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #E1306C, #F77737)" }}><Image size={18} /></div><div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>Fiscalização Instagram</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{isLive ? "Dados em tempo real via Graph API" : "Dados de demonstração — configure o token em Configurações"}</span></div></div>
       <div className="flex items-center gap-2">
@@ -898,6 +756,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
 
 /* ═══ MAIN DASHBOARD ═══ */
 export default function Dashboard() {
+  const { data } = useDashboardData();
   const [dk, setDk] = useState(true);
   const [tab, setTab] = useState("consolidado");
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -925,6 +784,13 @@ export default function Dashboard() {
   const [liveData, setLiveData] = useState(null);
   const [loadingLive, setLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(() => {
+    try {
+      const saved = localStorage.getItem("dashboard_autorefresh");
+      return saved ? JSON.parse(saved) : { enabled: false, intervalMin: 15 };
+    } catch { return { enabled: false, intervalMin: 15 }; }
+  });
+  const [countdown, setCountdown] = useState(0);
 
   const fetchAllData = useCallback(async () => {
     if (!apiConfig?.token) return;
@@ -986,6 +852,27 @@ export default function Dashboard() {
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
+  // Persist auto-refresh preference
+  useEffect(() => {
+    localStorage.setItem("dashboard_autorefresh", JSON.stringify(autoRefresh));
+  }, [autoRefresh]);
+
+  // Auto-refresh scheduling
+  useEffect(() => {
+    if (!autoRefresh.enabled || !liveData) return;
+    const totalSec = autoRefresh.intervalMin * 60;
+    setCountdown(totalSec);
+    const tick = setInterval(() => {
+      setCountdown(prev => (prev <= 1 ? totalSec : prev - 1));
+    }, 1000);
+    const fetcher = setInterval(() => {
+      fetchAllData();
+    }, totalSec * 1000);
+    return () => { clearInterval(tick); clearInterval(fetcher); };
+  }, [autoRefresh.enabled, autoRefresh.intervalMin, liveData, fetchAllData]);
+
+  const fmtCountdown = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+
   const refresh = () => {
     setSpinning(true);
     fetchAllData().finally(() => setSpinning(false));
@@ -994,44 +881,76 @@ export default function Dashboard() {
 
   const tabs = [
     { id: "consolidado", label: "Consolidado", icon: Layers },
-    { id: "maia", label: "Lojas Maia", icon: () => <div className="w-3 h-3 rounded" style={{ background: "#f59e0b" }} /> },
-    { id: "lider", label: "Líder Colchões", icon: () => <div className="w-3 h-3 rounded" style={{ background: "#6366f1" }} /> },
-    { id: "bm1", label: "BM1 Topo", icon: Megaphone },
-    { id: "bm2", label: "BM2 CRM", icon: ShoppingBag },
+    { id: "bm1", label: "BM1", icon: Megaphone },
+    { id: "bm2", label: "BM2", icon: ShoppingBag },
     { id: "instagram", label: "Instagram", icon: Image },
     { id: "config", label: "Configurações", icon: Settings },
   ];
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${dk ? "bg-zinc-950 text-zinc-100" : "bg-zinc-50 text-zinc-900"}`}>
-      <header className={`sticky top-0 z-40 backdrop-blur-2xl ${dk ? "bg-zinc-950/70 border-zinc-800/60" : "bg-white/70 border-zinc-200/60"} border-b`}>
-        <div className="max-w-[1200px] mx-auto px-5">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #22c55e, #10b981)" }}><BarChart3 size={15} className="text-white" /></div>
-              <div><span className="font-semibold text-sm tracking-tight">Dashboard Fiscalização</span><span className={`block text-[10px] ${dk ? "text-zinc-600" : "text-zinc-400"}`}>@lojasmaiaof + @lidercolchoes · Eali Performance · BM1 + BM2</span></div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[11px] mr-2 hidden sm:block ${dk ? "text-zinc-600" : "text-zinc-400"}`}>{lastUpdate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-              <button onClick={refresh} className={`p-2 rounded-xl transition-all ${dk ? "hover:bg-zinc-800" : "hover:bg-zinc-100"}`}><RefreshCw size={15} className={`${dk ? "text-zinc-500" : "text-zinc-400"} ${spinning ? "animate-spin" : ""}`} /></button>
-              <button onClick={() => setDk(!dk)} className={`p-2 rounded-xl transition-all ${dk ? "hover:bg-zinc-800" : "hover:bg-zinc-100"}`}>{dk ? <Sun size={15} className="text-zinc-500" /> : <Moon size={15} className="text-zinc-400" />}</button>
+    <DataCtx.Provider value={data}>
+      <div className={`min-h-screen transition-colors duration-300 ${dk ? "bg-zinc-950 text-zinc-100" : "bg-zinc-50 text-zinc-900"}`}>
+        <header className={`sticky top-0 z-40 backdrop-blur-2xl ${dk ? "bg-zinc-950/70 border-zinc-800/60" : "bg-white/70 border-zinc-200/60"} border-b`}>
+          <div className="max-w-[1200px] mx-auto px-3 sm:px-5">
+            <div className="flex items-center justify-between h-14">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #22c55e, #10b981)" }}><BarChart3 size={15} className="text-white" /></div>
+                <div><span className="font-semibold text-sm tracking-tight">Dashboard Fiscalização</span><span className={`hidden sm:block text-[10px] ${dk ? "text-zinc-600" : "text-zinc-400"}`}>@lojasmaiaof + @lidercolchoes · Eali Performance · BM1 + BM2</span></div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[11px] mr-2 hidden sm:block ${dk ? "text-zinc-600" : "text-zinc-400"}`}>{lastUpdate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                <button onClick={refresh} className={`p-2 rounded-xl transition-all ${dk ? "hover:bg-zinc-800" : "hover:bg-zinc-100"}`}><RefreshCw size={15} className={`${dk ? "text-zinc-500" : "text-zinc-400"} ${spinning ? "animate-spin" : ""}`} /></button>
+                {/* Auto-refresh controls */}
+                <button
+                  onClick={() => liveData && setAutoRefresh(p => ({ ...p, enabled: !p.enabled }))}
+                  title={!liveData ? "Disponível apenas com API configurada" : (autoRefresh.enabled ? "Desativar auto-refresh" : "Ativar auto-refresh")}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all
+                    ${!liveData ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+                    ${autoRefresh.enabled && liveData
+                      ? (dk ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-700")
+                      : (dk ? "hover:bg-zinc-800 text-zinc-500" : "hover:bg-zinc-100 text-zinc-400")
+                    }`}
+                >
+                  <Clock size={12} />
+                  Auto
+                </button>
+                {autoRefresh.enabled && liveData && (
+                  <>
+                    <select
+                      value={autoRefresh.intervalMin}
+                      onChange={e => setAutoRefresh(p => ({ ...p, intervalMin: Number(e.target.value) }))}
+                      className={`hidden sm:block text-[11px] px-2 py-1 rounded-lg border-0 outline-none cursor-pointer
+                        ${dk ? "bg-zinc-800 text-zinc-300" : "bg-zinc-100 text-zinc-600"}`}
+                    >
+                      {[5, 15, 30, 60].map(m => (
+                        <option key={m} value={m}>{m < 60 ? `${m} min` : "1 h"}</option>
+                      ))}
+                    </select>
+                    <span className={`hidden sm:inline text-[11px] tabular-nums ${dk ? "text-zinc-600" : "text-zinc-400"}`}>
+                      próx. em {fmtCountdown(countdown)}
+                    </span>
+                  </>
+                )}
+                <button onClick={() => setDk(!dk)} className={`p-2 rounded-xl transition-all ${dk ? "hover:bg-zinc-800" : "hover:bg-zinc-100"}`}>{dk ? <Sun size={15} className="text-zinc-500" /> : <Moon size={15} className="text-zinc-400" />}</button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-      <main className="max-w-[1200px] mx-auto px-5 py-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-          <div className={`inline-flex rounded-xl p-1 flex-wrap gap-0.5 ${dk ? "bg-zinc-900/80" : "bg-zinc-100"}`}>{tabs.map(t => { const Icon = t.icon; return (<button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${tab === t.id ? (dk ? "bg-zinc-800 text-zinc-100 shadow-sm shadow-black/20" : "bg-white text-zinc-900 shadow-sm") : (dk ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-500 hover:text-zinc-700")}`}><Icon size={12} />{t.label}</button>); })}</div>
-          <div className={`text-[11px] px-3 py-1.5 rounded-lg ${dk ? "bg-zinc-800/60 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}>{DATA.period.current}</div>
-        </div>
-        {tab === "consolidado" && <ConsolidatedView dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
-        {tab === "maia" && <BrandView brandKey="maia" dark={dk} liveData={liveData ? { bm1Campaigns: liveData.bm1MaiaCampaigns, bm2Campaigns: liveData.bm2MaiaCampaigns } : null} />}
-        {tab === "lider" && <BrandView brandKey="lider" dark={dk} liveData={liveData ? { bm1Campaigns: liveData.bm1LiderCampaigns, bm2Campaigns: liveData.bm2LiderCampaigns } : null} />}
-        {tab === "bm1" && <BM1View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
-        {tab === "bm2" && <BM2View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
-        {tab === "instagram" && <InstagramView dark={dk} apiConfig={apiConfig} />}
-        {tab === "config" && <ConfigView dark={dk} apiConfig={apiConfig} setApiConfig={setApiConfig} />}
-      </main>
-    </div>
+        </header>
+        <main className="max-w-[1200px] mx-auto px-3 py-4 sm:px-5 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 sm:mb-6">
+            <div className={`flex rounded-xl p-1 gap-0.5 overflow-x-auto scrollbar-none w-full sm:w-auto ${dk ? "bg-zinc-900/80" : "bg-zinc-100"}`}>{tabs.map(t => { const Icon = t.icon; return (<button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all flex-shrink-0 ${tab === t.id ? (dk ? "bg-zinc-800 text-zinc-100 shadow-sm shadow-black/20" : "bg-white text-zinc-900 shadow-sm") : (dk ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-500 hover:text-zinc-700")}`}><Icon size={12} />{t.label}</button>); })}</div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className={`text-[11px] px-3 py-1.5 rounded-lg ${dk ? "bg-zinc-800/60 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}>{data.period.current}</div>
+              <div className={`text-[11px] px-3 py-1.5 rounded-lg font-medium ${liveData ? (dk ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-700") : (dk ? "bg-zinc-800/60 text-zinc-500" : "bg-zinc-100 text-zinc-400")}`}>{liveData ? "API" : "Mock"}</div>
+            </div>
+          </div>
+          {tab === "consolidado" && <ConsolidatedView dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
+          {tab === "bm1" && <BM1View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
+          {tab === "bm2" && <BM2View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
+          {tab === "instagram" && <InstagramView dark={dk} apiConfig={apiConfig} />}
+          {tab === "config" && <ConfigView dark={dk} apiConfig={apiConfig} setApiConfig={setApiConfig} />}
+        </main>
+      </div>
+    </DataCtx.Provider>
   );
 }
