@@ -446,9 +446,6 @@ function InstagramView({ dark: dk, apiConfig }) {
 
 /* ═══ TAB 7: CONFIGURAÇÕES ═══ */
 function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
-  const [token, setToken] = useState(apiConfig?.token || "");
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null);
   const [saved, setSaved] = useState(false);
 
   // API data
@@ -471,7 +468,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
 
   const apiFetch = async (endpoint, params = {}) => {
     const url = new URL(`${BASE}${endpoint}`);
-    url.searchParams.set("access_token", token.trim());
+    url.searchParams.set("access_token", apiConfig?.token || "");
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     const res = await fetch(url.toString());
     const data = await res.json();
@@ -479,27 +476,19 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
     return data;
   };
 
-  const testToken = async () => {
-    if (!token.trim()) return;
-    setTesting(true); setTestResult(null); setBms([]); setBm1Id(""); setBm2Id("");
-    setAdAccountsBm1([]); setAdAccountsBm2([]); setIgAccounts([]);
-    try {
-      const me = await apiFetch("/me", { fields: "id,name" });
-      setTestResult({ ok: true, msg: `Conectado como: ${me.name} (ID: ${me.id})` });
-
-      // Buscar Business Managers automaticamente
-      setLoadingBms(true);
-      const bmsData = await apiFetch("/me/businesses", { fields: "id,name", limit: "50" });
-      setBms(bmsData.data || []);
-    } catch (e) {
-      setTestResult({ ok: false, msg: e.message });
-    }
-    setTesting(false); setLoadingBms(false);
-  };
+  // Auto-carregar BMs na montagem
+  useEffect(() => {
+    if (!apiConfig?.token || bms.length > 0) return;
+    setLoadingBms(true);
+    apiFetch("/me/businesses", { fields: "id,name", limit: "50" })
+      .then(d => setBms(d.data || []))
+      .catch(() => {})
+      .finally(() => setLoadingBms(false));
+  }, [apiConfig?.token]);
 
   // Buscar Ad Accounts e IGs ao selecionar BMs
   useEffect(() => {
-    if (!bm1Id || !token.trim()) return;
+    if (!bm1Id || !apiConfig?.token) return;
     setLoadingAccounts(true);
     const fetchBm1 = async () => {
       try {
@@ -519,7 +508,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
   }, [bm1Id]);
 
   useEffect(() => {
-    if (!bm2Id || !token.trim() || bm2Id === bm1Id) return;
+    if (!bm2Id || !apiConfig?.token || bm2Id === bm1Id) return;
     const fetchBm2 = async () => {
       try {
         const [ads, igs] = await Promise.all([
@@ -542,17 +531,17 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
   }, [bm2Id, bm1Id, adAccountsBm1]);
 
   const saveConfig = () => {
-    const config = { token: token.trim(), bm1Id, bm2Id: bm2Id || bm1Id, bm1AdAccount, bm2AdAccount, igMaiaId, igLiderId };
-    setApiConfig(config);
-    try { localStorage.setItem("dashboard_config", JSON.stringify(config)); } catch {}
+    const configToSave = { bm1Id, bm2Id: bm2Id || bm1Id, bm1AdAccount, bm2AdAccount, igMaiaId, igLiderId };
+    setApiConfig(prev => ({ ...prev, ...configToSave })); // preserva o token
+    try { localStorage.setItem("dashboard_config", JSON.stringify(configToSave)); } catch {}
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
   const clearConfig = () => {
     setApiConfig(null);
-    setToken(""); setBm1Id(""); setBm2Id(""); setBm1AdAccount(""); setBm2AdAccount("");
-    setIgMaiaId(""); setIgLiderId(""); setTestResult(null); setBms([]);
+    setBm1Id(""); setBm2Id(""); setBm1AdAccount(""); setBm2AdAccount("");
+    setIgMaiaId(""); setIgLiderId(""); setBms([]);
     setAdAccountsBm1([]); setAdAccountsBm2([]); setIgAccounts([]);
     try { localStorage.removeItem("dashboard_config"); } catch {}
   };
@@ -566,46 +555,11 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
     <div className="space-y-5 max-w-3xl">
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}><Settings size={18} /></div>
-        <div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>Configurações</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>Token da API do Meta · Seleção automática de contas</span></div>
+        <div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>Configurações</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>Seleção de contas de anúncios e perfis do Instagram</span></div>
       </div>
 
-      {/* Token */}
-      <Card title="Token de acesso — Meta Graph API" dark={dk}>
-        <div className={`rounded-xl p-3 mb-4 text-[11px] leading-relaxed ${dk ? "bg-zinc-900/60 text-zinc-400" : "bg-zinc-50 text-zinc-500"}`}>
-          <div className="flex items-center gap-2 mb-2"><Key size={12} className="text-emerald-500" /><span className="font-medium text-emerald-500">Como gerar o token:</span></div>
-          <ol className="space-y-1 list-decimal list-inside">
-            <li>Acesse <span className="font-mono text-emerald-400">developers.facebook.com/tools/explorer</span></li>
-            <li>Selecione seu App → Permissões: <span className="font-mono text-[10px] text-amber-400">instagram_basic, instagram_manage_insights, pages_show_list, pages_read_engagement, ads_read, business_management, read_insights</span></li>
-            <li>Clique "Generate Access Token" → Autorize → Cole abaixo</li>
-          </ol>
-          <div className={`mt-2 p-2 rounded-lg ${dk ? "bg-amber-500/8 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
-            <Shield size={11} className="inline mr-1" />Token fica apenas no seu navegador. Expira em ~1h (curto) ou 60 dias (longo).
-          </div>
-        </div>
-        <div>
-          <label className={lbl}>Access Token</label>
-          <div className="flex gap-2">
-            <input type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Cole seu token aqui..." className={`${inp} flex-1`} />
-            <button onClick={testToken} disabled={!token.trim() || testing} className="px-4 py-3 rounded-xl text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 flex-shrink-0 transition-all">
-              {testing ? <Loader2 size={14} className="animate-spin" /> : "Testar"}
-            </button>
-          </div>
-          {testResult && (
-            <div className={`flex items-center gap-2 mt-2 p-2 rounded-lg text-xs ${testResult.ok ? (dk ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-50 text-emerald-700") : (dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600")}`}>
-              {testResult.ok ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
-              {testResult.msg}
-            </div>
-          )}
-          {loadingBms && (
-            <div className={`flex items-center gap-2 mt-2 text-xs ${dk ? "text-zinc-400" : "text-zinc-500"}`}>
-              <Loader2 size={12} className="animate-spin" /> Carregando Business Managers...
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* BMs — aparece se a API retornar, ou campos manuais */}
-      {testResult?.ok && (
+      {/* BMs */}
+      {apiConfig?.token && (
         <Card title="Business Managers & Contas de Anúncios" dark={dk}>
           <div className={`rounded-xl p-3 mb-4 text-[11px] leading-relaxed ${dk ? "bg-zinc-900/60 text-zinc-400" : "bg-zinc-50 text-zinc-500"}`}>
             <div className="flex items-center gap-2 mb-1"><Key size={12} className="text-amber-400" /><span className="font-medium text-amber-400">Como obter o Ad Account ID:</span></div>
@@ -614,6 +568,12 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
               <li>Vá em <span className="font-mono text-[10px] text-zinc-300">Contas de anúncios</span> → copie o ID (formato: <span className="font-mono text-[10px] text-emerald-400">act_XXXXXXXXXX</span>)</li>
             </ol>
           </div>
+
+          {loadingBms && (
+            <div className={`flex items-center gap-2 mb-3 text-xs ${dk ? "text-zinc-400" : "text-zinc-500"}`}>
+              <Loader2 size={12} className="animate-spin" /> Carregando Business Managers...
+            </div>
+          )}
 
           {bms.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -665,8 +625,8 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
         </Card>
       )}
 
-      {/* IDs do Instagram — SEMPRE visível após token válido */}
-      {testResult?.ok && (
+      {/* IDs do Instagram */}
+      {apiConfig?.token && (
         <Card title="IDs dos Perfis Instagram" badge="obrigatório para aba Instagram" dark={dk}>
           <div className={`rounded-xl p-3 mb-4 text-[11px] leading-relaxed ${dk ? "bg-zinc-900/60 text-zinc-400" : "bg-zinc-50 text-zinc-500"}`}>
             <div className="flex items-center gap-2 mb-1"><Key size={12} className="text-amber-400" /><span className="font-medium text-amber-400">Como obter o ID do perfil Instagram:</span></div>
@@ -722,7 +682,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
         </button>
         <div className="flex items-center gap-3">
           {saved && <span className="flex items-center gap-1.5 text-xs text-emerald-500"><CheckCircle size={13} /> Salvo!</span>}
-          <button onClick={saveConfig} disabled={!token.trim()} className="px-6 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-all disabled:opacity-50">
+          <button onClick={saveConfig} className="px-6 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-all">
             Salvar configurações
           </button>
         </div>
@@ -732,7 +692,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
       <Card title="Status da conexão" dark={dk}>
         <div className="space-y-2">
           {[
-            { label: "Token", value: apiConfig?.token ? "Configurado" : "Não configurado", ok: !!apiConfig?.token },
+            { label: "Token Meta", value: "Via variável de ambiente", ok: true },
             { label: "BM1", value: apiConfig?.bm1Id ? bms.find(b => b.id === apiConfig.bm1Id)?.name || apiConfig.bm1Id : "—", ok: !!apiConfig?.bm1Id },
             { label: "BM2", value: apiConfig?.bm2Id ? bms.find(b => b.id === apiConfig.bm2Id)?.name || apiConfig.bm2Id : "—", ok: !!apiConfig?.bm2Id },
             { label: "Ad Account BM1", value: apiConfig?.bm1AdAccount || "—", ok: !!apiConfig?.bm1AdAccount },
@@ -762,24 +722,28 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [spinning, setSpinning] = useState(false);
   const [apiConfig, setApiConfig] = useState(() => {
+    const envToken = import.meta.env.VITE_META_TOKEN;
+    if (!envToken) return null;
+
+    const base = {
+      token: envToken,
+      bm1Id: import.meta.env.VITE_BM1_ID || "",
+      bm2Id: import.meta.env.VITE_BM2_ID || import.meta.env.VITE_BM1_ID || "",
+      bm1AdAccount: import.meta.env.VITE_BM1_AD_ACCOUNT || "",
+      bm2AdAccount: import.meta.env.VITE_BM2_AD_ACCOUNT || "",
+      igMaiaId: import.meta.env.VITE_IG_MAIA_ID || "",
+      igLiderId: import.meta.env.VITE_IG_LIDER_ID || "",
+    };
+
     try {
       const saved = localStorage.getItem("dashboard_config");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...base, ...parsed, token: envToken }; // token sempre do env
+      }
     } catch {}
-    // Fallback para variáveis de ambiente (Netlify)
-    const envToken = import.meta.env.VITE_META_TOKEN;
-    if (envToken) {
-      return {
-        token: envToken,
-        bm1Id: import.meta.env.VITE_BM1_ID || "",
-        bm2Id: import.meta.env.VITE_BM2_ID || import.meta.env.VITE_BM1_ID || "",
-        bm1AdAccount: import.meta.env.VITE_BM1_AD_ACCOUNT || "",
-        bm2AdAccount: import.meta.env.VITE_BM2_AD_ACCOUNT || "",
-        igMaiaId: import.meta.env.VITE_IG_MAIA_ID || "",
-        igLiderId: import.meta.env.VITE_IG_LIDER_ID || "",
-      };
-    }
-    return null;
+
+    return base;
   });
   const [liveData, setLiveData] = useState(null);
   const [loadingLive, setLoadingLive] = useState(false);
