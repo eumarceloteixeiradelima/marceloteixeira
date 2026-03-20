@@ -225,10 +225,11 @@ function CreativesList({ creatives, accent, accentLight, dark: dk }) {
 }
 
 /* ═══ TAB 1: CONSOLIDADO ═══ */
-function ConsolidatedView({ dark: dk, liveData, loading, error }) {
+function ConsolidatedView({ dark: dk, liveData, loading, error, discovering }) {
   const DATA = useData();
   const c = liveData?.consolidated || DATA.consolidated;
   return (<div className="space-y-4 sm:space-y-5">
+    {discovering && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"}`}><Loader2 size={13} className="animate-spin text-blue-500" /> Descobrindo contas de anúncio automaticamente...</div>}
     {loading && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-zinc-800/50 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}><Loader2 size={13} className="animate-spin text-emerald-500" /> Buscando dados reais da Meta API...</div>}
     {error && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600"}`}><AlertCircle size={13} /> {error}</div>}
     <div className={`rounded-2xl p-4 sm:p-5 text-center ${dk ? "bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-emerald-500/20" : "bg-gradient-to-r from-emerald-50 to-cyan-50 border-emerald-200"} border`}><div className={`text-[10px] uppercase tracking-wider mb-1 ${dk ? "text-zinc-400" : "text-zinc-500"}`}>Total geral investido {liveData ? "(últimos 7 dias)" : "na semana"}</div><div className={`text-2xl sm:text-3xl font-bold tracking-tight ${dk ? "text-emerald-400" : "text-emerald-700"}`}>{fmtMoney(c.totalInvested)}</div><div className={`text-xs mt-1 ${dk ? "text-zinc-500" : "text-zinc-400"}`}>{liveData ? "API conectada" : DATA.period.current} · BM1 + BM2</div></div>
@@ -242,7 +243,7 @@ function ConsolidatedView({ dark: dk, liveData, loading, error }) {
 }
 
 /* ═══ TAB 2: BM1 ═══ */
-function BM1View({ dark: dk, liveData, loading, error }) {
+function BM1View({ dark: dk, liveData, loading, error, discovering }) {
   const DATA = useData();
   const [sub, setSub] = useState("maia");
   const isLive = !!liveData;
@@ -253,6 +254,7 @@ function BM1View({ dark: dk, liveData, loading, error }) {
   const period = isLive ? "Últimos 7 dias" : undefined;
   return (<div className="space-y-4 sm:space-y-5">
     <div className="flex items-center gap-3"><div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}><Megaphone size={18} /></div><div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>BM1 — Topo de funil</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>Tráfego · Seguidores · Direct · Engajamento · {isLive ? "Dados reais" : "Demo"}</span></div></div>
+    {discovering && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"}`}><Loader2 size={13} className="animate-spin text-blue-500" /> Descobrindo contas de anúncio automaticamente...</div>}
     {loading && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-zinc-800/50 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}><Loader2 size={13} className="animate-spin text-emerald-500" /> Buscando dados reais da Meta API...</div>}
     {error && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600"}`}><AlertCircle size={13} /> {error}</div>}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"><KPI dark={dk} icon={DollarSign} label="Investido" value={fmtMoney(bm1?.invested ?? DATA.consolidated.bm1.invested)} accent="#10b981" /><KPI dark={dk} icon={Eye} label="Alcance" value={fmt(bm1?.reach ?? DATA.consolidated.bm1.reach)} accent="#06b6d4" /><KPI dark={dk} icon={Zap} label="Impressões" value={fmt(bm1?.impressions ?? DATA.consolidated.bm1.impressions)} accent="#8b5cf6" /><KPI dark={dk} icon={DollarSign} label="CPM médio" value={fmtMoney(bm1?.cpm ?? DATA.consolidated.bm1.cpm)} accent="#f59e0b" /></div>
@@ -264,7 +266,7 @@ function BM1View({ dark: dk, liveData, loading, error }) {
 }
 
 /* ═══ TAB 3: BM2 ═══ */
-function BM2View({ dark: dk, liveData, loading, error }) {
+function BM2View({ dark: dk, liveData, loading, error, discovering }) {
   const DATA = useData();
   const [sub, setSub] = useState("maia");
   const isLive = !!liveData;
@@ -273,6 +275,7 @@ function BM2View({ dark: dk, liveData, loading, error }) {
   const liderCampaigns = isLive ? (liveData.bm2LiderCampaigns || []) : DATA.bm2.lider;
   return (<div className="space-y-4 sm:space-y-5">
     <div className="flex items-center gap-3"><div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)" }}><ShoppingBag size={18} /></div><div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>BM2 — Conversão CRM</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>WhatsApp · Encarte · LP · GoHighLevel · {isLive ? "Dados reais" : "Demo"}</span></div></div>
+    {discovering && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"}`}><Loader2 size={13} className="animate-spin text-blue-500" /> Descobrindo contas de anúncio automaticamente...</div>}
     {loading && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-zinc-800/50 text-zinc-400" : "bg-zinc-100 text-zinc-500"}`}><Loader2 size={13} className="animate-spin text-emerald-500" /> Buscando dados reais da Meta API...</div>}
     {error && <div className={`flex items-center gap-2 p-3 rounded-xl text-xs ${dk ? "bg-rose-500/10 text-rose-400" : "bg-rose-50 text-rose-600"}`}><AlertCircle size={13} /> {error}</div>}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"><KPI dark={dk} icon={DollarSign} label="Investido" value={fmtMoney(bm2?.invested ?? DATA.consolidated.bm2.invested)} accent="#f59e0b" /><KPI dark={dk} icon={Eye} label="Alcance" value={fmt(bm2?.reach ?? DATA.consolidated.bm2.reach)} accent="#06b6d4" /><KPI dark={dk} icon={Target} label="Total contatos" value={String(bm2?.contacts ?? DATA.consolidated.bm2.contacts)} accent="#8b5cf6" /><KPI dark={dk} icon={Users} label="Novos contatos" value={String(bm2?.newContacts ?? DATA.consolidated.bm2.newContacts)} accent="#10b981" /></div>
@@ -464,6 +467,16 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
   const [igMaiaId, setIgMaiaId] = useState(apiConfig?.igMaiaId || "");
   const [igLiderId, setIgLiderId] = useState(apiConfig?.igLiderId || "");
 
+  // Sincroniza estado local quando apiConfig muda externamente (ex: auto-discovery)
+  useEffect(() => {
+    if (apiConfig?.bm1Id)        setBm1Id(apiConfig.bm1Id);
+    if (apiConfig?.bm2Id)        setBm2Id(apiConfig.bm2Id);
+    if (apiConfig?.bm1AdAccount) setBm1AdAccount(apiConfig.bm1AdAccount);
+    if (apiConfig?.bm2AdAccount) setBm2AdAccount(apiConfig.bm2AdAccount);
+    if (apiConfig?.igMaiaId)     setIgMaiaId(apiConfig.igMaiaId);
+    if (apiConfig?.igLiderId)    setIgLiderId(apiConfig.igLiderId);
+  }, [apiConfig]);
+
   const BASE = "https://graph.facebook.com/v19.0";
 
   const apiFetch = async (endpoint, params = {}) => {
@@ -505,7 +518,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
       setLoadingAccounts(false);
     };
     fetchBm1();
-  }, [bm1Id]);
+  }, [bm1Id, apiConfig?.token]);
 
   useEffect(() => {
     if (!bm2Id || !apiConfig?.token || bm2Id === bm1Id) return;
@@ -523,7 +536,7 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
       } catch {}
     };
     fetchBm2();
-  }, [bm2Id]);
+  }, [bm2Id, apiConfig?.token]);
 
   // Se BM2 = BM1, reutilizar as Ad Accounts da BM1
   useEffect(() => {
@@ -557,6 +570,36 @@ function ConfigView({ dark: dk, apiConfig, setApiConfig }) {
         <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}><Settings size={18} /></div>
         <div><h2 className={`text-lg font-semibold ${dk ? "text-zinc-50" : "text-zinc-900"}`}>Configurações</h2><span className={`text-xs ${dk ? "text-zinc-500" : "text-zinc-400"}`}>Seleção de contas de anúncios e perfis do Instagram</span></div>
       </div>
+
+      {/* Status do Token */}
+      <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs mb-4
+        ${apiConfig?.token
+          ? (dk ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200")
+          : (dk ? "bg-rose-500/10 text-rose-400 border-rose-500/20" : "bg-rose-50 text-rose-600 border-rose-200")
+        } border`}>
+        {apiConfig?.token ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+        <span>
+          Token Meta API: {apiConfig?.token ? "Conectado ✓" : "Não configurado — defina VITE_META_TOKEN no Netlify"}
+        </span>
+      </div>
+      {apiConfig?.token && (
+        <div className="flex flex-wrap gap-2 mb-4 text-[11px]">
+          {[
+            { label: "BM1 Ad Account", val: apiConfig.bm1AdAccount },
+            { label: "BM2 Ad Account", val: apiConfig.bm2AdAccount },
+            { label: "IG Maia", val: apiConfig.igMaiaId },
+            { label: "IG Líder", val: apiConfig.igLiderId },
+          ].map(item => (
+            <span key={item.label} className={`px-2.5 py-1 rounded-full border
+              ${item.val
+                ? (dk ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200")
+                : (dk ? "bg-zinc-800 text-zinc-500 border-zinc-700" : "bg-zinc-100 text-zinc-400 border-zinc-200")
+              }`}>
+              {item.label}: {item.val ? "✓" : "—"}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* BMs */}
       {apiConfig?.token && (
@@ -739,15 +782,31 @@ export default function Dashboard() {
       const saved = localStorage.getItem("dashboard_config");
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...base, ...parsed, token: envToken }; // token sempre do env
+        const merged = { ...base, ...parsed, token: envToken }; // token sempre do env
+        console.log("[Meta] apiConfig inicializado:", {
+          hasToken: !!envToken,
+          tokenPreview: envToken ? envToken.slice(0, 12) + "..." : "none",
+          bm1AdAccount: merged.bm1AdAccount || "(vazio)",
+          bm2AdAccount: merged.bm2AdAccount || "(vazio)",
+          source: "localStorage + env token",
+        });
+        return merged;
       }
     } catch {}
 
+    console.log("[Meta] apiConfig inicializado:", {
+      hasToken: !!envToken,
+      tokenPreview: envToken ? envToken.slice(0, 12) + "..." : "none",
+      bm1AdAccount: base.bm1AdAccount || "(vazio)",
+      bm2AdAccount: base.bm2AdAccount || "(vazio)",
+      source: "env vars",
+    });
     return base;
   });
   const [liveData, setLiveData] = useState(null);
   const [loadingLive, setLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState("");
+  const [discovering, setDiscovering] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(() => {
     try {
       const saved = localStorage.getItem("dashboard_autorefresh");
@@ -758,10 +817,13 @@ export default function Dashboard() {
 
   const fetchAllData = useCallback(async () => {
     if (!apiConfig?.token) return;
-    const hasAds = apiConfig.bm1AdAccount || apiConfig.bm2AdAccount;
-    if (!hasAds) return;
-    setLoadingLive(true);
     setLiveError("");
+    const hasAds = apiConfig.bm1AdAccount || apiConfig.bm2AdAccount;
+    if (!hasAds) {
+      setLiveError("Token conectado, mas Ad Accounts não configuradas. Aguarde a descoberta automática ou acesse Configurações.");
+      return;
+    }
+    setLoadingLive(true);
     try {
       const [bm1Raw, bm2Raw] = await Promise.all([
         apiConfig.bm1AdAccount ? fetchAdAccountData(apiConfig.bm1AdAccount, apiConfig.token) : Promise.resolve({ summary: {}, campaigns: [] }),
@@ -815,6 +877,61 @@ export default function Dashboard() {
   }, [apiConfig]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
+
+  // Auto-discovery: quando token existe mas Ad Accounts não estão configuradas
+  useEffect(() => {
+    if (!apiConfig?.token) return;
+    if (apiConfig.bm1AdAccount || apiConfig.bm2AdAccount) return; // já configurado
+
+    const discover = async () => {
+      setDiscovering(true);
+      try {
+        const base = `https://graph.facebook.com/v19.0`;
+        const bmsRes = await fetch(
+          `${base}/me/businesses?fields=id,name&limit=50&access_token=${apiConfig.token}`
+        ).then(r => r.json());
+
+        const bms = bmsRes.data || [];
+        if (!bms.length) return;
+
+        const allAccounts = await Promise.all(
+          bms.map(async bm => {
+            try {
+              const r = await fetch(
+                `${base}/${bm.id}/owned_ad_accounts?fields=id,name,account_id&limit=50&access_token=${apiConfig.token}`
+              ).then(r => r.json());
+              return { bm, accounts: r.data || [] };
+            } catch { return { bm, accounts: [] }; }
+          })
+        );
+
+        const withAccounts = allAccounts.filter(x => x.accounts.length > 0);
+        if (!withAccounts.length) return;
+
+        const bm1 = withAccounts[0];
+        const bm2 = withAccounts[1] || bm1;
+
+        const discovered = {
+          bm1Id: bm1.bm.id,
+          bm2Id: bm2.bm.id,
+          bm1AdAccount: bm1.accounts[0].id,
+          bm2AdAccount: bm2.accounts[0]?.id || bm1.accounts[0].id,
+          igMaiaId: apiConfig.igMaiaId || "",
+          igLiderId: apiConfig.igLiderId || "",
+        };
+
+        setApiConfig(prev => ({ ...prev, ...discovered }));
+        try { localStorage.setItem("dashboard_config", JSON.stringify(discovered)); } catch {}
+        console.log("[Meta] Auto-discovery concluído:", discovered);
+      } catch (e) {
+        console.warn("[Meta] Auto-discovery falhou:", e.message);
+      } finally {
+        setDiscovering(false);
+      }
+    };
+
+    discover();
+  }, [apiConfig?.token, apiConfig?.bm1AdAccount, apiConfig?.bm2AdAccount]);
 
   // Persist auto-refresh preference
   useEffect(() => {
@@ -908,9 +1025,9 @@ export default function Dashboard() {
               <div className={`text-[11px] px-3 py-1.5 rounded-lg font-medium ${liveData ? (dk ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-700") : (dk ? "bg-zinc-800/60 text-zinc-500" : "bg-zinc-100 text-zinc-400")}`}>{liveData ? "API" : "Mock"}</div>
             </div>
           </div>
-          {tab === "consolidado" && <ConsolidatedView dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
-          {tab === "bm1" && <BM1View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
-          {tab === "bm2" && <BM2View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} />}
+          {tab === "consolidado" && <ConsolidatedView dark={dk} liveData={liveData} loading={loadingLive} error={liveError} discovering={discovering} />}
+          {tab === "bm1" && <BM1View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} discovering={discovering} />}
+          {tab === "bm2" && <BM2View dark={dk} liveData={liveData} loading={loadingLive} error={liveError} discovering={discovering} />}
           {tab === "instagram" && <InstagramView dark={dk} apiConfig={apiConfig} />}
           {tab === "config" && <ConfigView dark={dk} apiConfig={apiConfig} setApiConfig={setApiConfig} />}
         </main>
